@@ -19,7 +19,7 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 h-full w-full">
       <Nav />
-    <main className="flex-1 w-full">
+      <main className="flex-1 w-full">
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
@@ -28,12 +28,14 @@ function App() {
           <Route path="/signup" element={<Signup />} />
           <Route path="/features" element={<Features />} />
           <Route path="/companyRegister" element={<Register />} />
+          
+
           <Route path="/demo" element={<Demo />} />
           <Route path="/workplace" element={<WorkPlace />} />
           <Route path="/admin/projects" element={<AdminProjectsPage />} />
           <Route path="/superadmin" element={<SuperAdminPage />} />
           <Route path="/admin/pending-users" element={<PendingUsers />} />
-          <Route path="/projects/:projectId" element={<ProjectDetailsPage />}/>
+          <Route path="/projects/:projectId" element={<ProjectDetailsPage />} />
         </Routes>
       </main>
       <Footer />

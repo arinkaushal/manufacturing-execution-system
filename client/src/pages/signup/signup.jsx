@@ -1,5 +1,5 @@
 
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { registerUser } from "../../API/authApi";
 
@@ -95,8 +95,9 @@ function Signup() {
               {isSubmitting ? "Creating Account..." : "Create Account"}
             </button>
 
-            <div className="text-center text-sm text-gray-600">
-              Already have an account? <Link to="/login" className="font-medium hover:underline">Log in</Link>
+            <div className="text-center text-sm text-gray-600 flex flex-col gap-2 mt-2">
+              <p>Already have an account? <Link to="/login" className="font-medium text-black hover:underline">Log in</Link></p>
+              <p>Want to onboard your organization? <Link to="/companyRegister" className="font-medium text-blue-600 hover:underline">Register Company</Link></p>
             </div>
           </div>
         </div>
@@ -106,9 +107,8 @@ function Signup() {
           {slides.map((slide, index) => (
             <div
               key={index}
-              className={`absolute inset-0 flex flex-col items-center justify-center px-12 transition-all duration-1000 ${
-                index === currentSlide ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-              }`}
+              className={`absolute inset-0 flex flex-col items-center justify-center px-12 transition-all duration-1000 ${index === currentSlide ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                }`}
             >
               <h2 className="text-4xl font-bold mb-4">{slide.title}</h2>
               <p className="text-lg opacity-80">{slide.subtitle}</p>

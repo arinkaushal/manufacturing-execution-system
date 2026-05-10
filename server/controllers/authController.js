@@ -10,7 +10,7 @@ const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || 'adminS@mail.com';
 
 
 const genPasskey = () => {
-  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2,6);
+  return Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
 };
 
 export const registerUser = async (req, res) => {
@@ -21,13 +21,13 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    
+
     const company = await Company.findOne({ companyName });
     if (!company) {
       return res.status(404).json({ message: "Company not registered" });
     }
 
-    
+
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({ message: "User already exists" });
@@ -40,7 +40,7 @@ export const registerUser = async (req, res) => {
       email: email.toLowerCase(),
       password: hashed,
       company: company._id,
-      companyName, 
+      companyName,
       companyRole: "USER",
       requestedRole,
       isApproved: false
@@ -87,7 +87,7 @@ export const registerCompany = async (req, res) => {
     email: `${companyName}.admin@mail.com`.toLowerCase(),
     password: hashed,
     company: company._id,
-    companyName: companyName, 
+    companyName: companyName,
     companyRole: "SUPER_ADMIN",
     requestedRole: "LEAD_AUTOMATION_ENGINEER",
     isApproved: true
@@ -168,8 +168,9 @@ export const createAdmin = async (req, res) => {
     email: email.toLowerCase(),
     password: hashed,
     company: req.user.company,
+    companyName: req.user.companyName,
     companyRole: "ADMIN",
-    requestedRole: "TEAM_LEAD",
+    requestedRole: "SUPERVISOR",
     isApproved: true,
     approvedBy: req.user.id
   });

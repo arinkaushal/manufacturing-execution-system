@@ -10,8 +10,8 @@ function ProductionOrder({ id, data }) {
   const { setNodes } = useReactFlow();
   const [toggle, setToggle] = useState(false);
   const toggleDetails = useCallback(() => {
-  setToggle((t) => !t);
-}, []);
+    setToggle((t) => !t);
+  }, []);
 
 
   function reducer(state, action) {
@@ -24,18 +24,18 @@ function ProductionOrder({ id, data }) {
   }
 
 
-const [state, dispatch] = useReducer(
-  reducer,
-  null,
-  () => ({
-    itemName: data?.itemName || "",
-    quantity: data?.quantity || 1,
-    startDate: data?.startDate || "",
-    endDate: data?.endDate || "",
-    customerName: data?.customerName || "",
-    status: data?.status || "",
-  })
-);
+  const [state, dispatch] = useReducer(
+    reducer,
+    null,
+    () => ({
+      itemName: data?.itemName || "",
+      quantity: data?.quantity || 1,
+      startDate: data?.startDate || "",
+      endDate: data?.endDate || "",
+      customerName: data?.customerName || "",
+      status: data?.status || "",
+    })
+  );
 
   const updateNodeData = useCallback(
     (field, value) => {
@@ -64,7 +64,7 @@ const [state, dispatch] = useReducer(
         <DeleteButton nodeId={id} />
 
       </div>
-      <div className="relative rounded-3xl p-4 bg-gray-50 ">
+      <div className="relative rounded-3xl p-4 bg-blue-50/50 border border-blue-100">
         <div className="flex ">
           <div className="flex flex-col w-full">
             <label>Item Name:</label>

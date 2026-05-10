@@ -1,28 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { 
-  Menu, X, Workflow, Settings, Box, 
-  ChevronDown, LayoutDashboard, Users, ShieldAlert 
+import {
+  Menu, X, Workflow, Settings, ChevronDown, LayoutDashboard, Users, ShieldAlert
 } from "lucide-react";
-import { getSession, logoutUser } from "@/API/authApi";
+import { logoutUser } from "@/API/authApi";
 import { useAuth } from "@/API/AuthContext";
 
 function Nav() {
   const { user, logout, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [session, setSession] = useState(null);
-  
   const navigate = useNavigate();
 
-  useEffect(() => {
-    getSession()
-      .then(setSession)
-      .catch(() => setSession(null));
-  }, []);
-
-  const isAdmin = session?.companyRole === "ADMIN";
-  const isSuperAdmin = session?.companyRole === "SUPER_ADMIN";
-  const isUser = session?.companyRole === "USER";
+  const isAdmin = user?.companyRole === "ADMIN";
+  const isSuperAdmin = user?.companyRole === "SUPER_ADMIN";
+  const isUser = user?.companyRole === "USER";
 
   if (loading) return null;
 
@@ -36,102 +27,82 @@ function Nav() {
     }
   };
 
-  // -- STYLES --
-  // 1. Standard Link Style (Reduced size from text-2xl to text-sm to fix wrapping)
-  const navLinkStyle = "px-3 py-2 text-sm font-medium text-slate-600 hover:text-blue-600 hover:bg-slate-50 rounded-lg transition-all duration-200";
-  
-  // 2. Button styles for Auth
-  const authButtonStyle = "px-4 py-2 text-sm font-medium transition-all duration-200 rounded-lg";
+  // Minimal GitHub/Jira style links
+  const navLinkStyle = "px-3 py-1.5 text-[13px] font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors";
+  const authButtonStyle = "px-3 py-1.5 text-[13px] font-medium transition-colors rounded-md";
 
   return (
-    // Outer container: Full width, sticky to top
-    <div className="w-full sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
-      <nav className="flex items-center justify-between px-4 md:px-8 h-16 max-w-7xl mx-auto">
-        
-        {/* --- Logo --- */}
-        <Link to="/" className="flex items-center gap-2 group">
-          <div className="relative text-blue-600 group-hover:scale-105 transition-transform">
-            <Workflow size={32} strokeWidth={1.5} />
-            <Settings className="absolute -top-1 -right-1 animate-[spin_10s_linear_infinite] opacity-70" size={14} />
-          </div>
-          <h1 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight">
+    <div className="w-full bg-white border-b border-gray-200 sticky top-0 z-50">
+      <nav className="flex items-center justify-between px-6 h-12 max-w-full mx-auto">
+        <Link to="/" className="flex items-center gap-2 group mr-6">
+          <Workflow size={20} strokeWidth={2} className="text-gray-800" />
+          <h1 className="text-sm font-semibold text-gray-900 tracking-tight">
             ProcessFlow
           </h1>
         </Link>
 
-        {/* --- Hamburger (Mobile) --- */}
+        {/* --- Hamburger --- */}
         <button
-          className="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-md"
+          className="md:hidden p-1.5 text-gray-600 hover:bg-gray-100 rounded-md"
           onClick={() => setIsOpen(!isOpen)}
         >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
+          {isOpen ? <X size={18} /> : <Menu size={18} />}
         </button>
 
         {/* --- Desktop Navigation --- */}
-        <div className="hidden md:flex items-center gap-1 lg:gap-2">
-          <Link className={navLinkStyle} to="/">Home</Link>
+        <div className="hidden md:flex items-center gap-1 w-full max-w-3xl">
+          <Link className={navLinkStyle} to="/">Overview</Link>
           <Link className={navLinkStyle} to="/about">About</Link>
           <Link className={navLinkStyle} to="/features">Features</Link>
-          <Link className={navLinkStyle} to="/demo">Demo</Link>
-          
-          {session && isUser && (
-            <Link className={`${navLinkStyle} text-blue-600 bg-blue-50/50`} to="/workplace">
-              WorkPlace
+          <Link className={navLinkStyle} to="/demo">Demo Workspace</Link>
+
+          {user && isUser && (
+            <Link className={`${navLinkStyle} text-blue-700 bg-blue-50 border border-blue-200`} to="/workplace">
+              My Workplace
             </Link>
           )}
 
-          {/* --- ADMIN DROPDOWN (Floating Popup) --- */}
-          {session && (isAdmin || isSuperAdmin) && (
-            <div className="relative group">
-              {/* Trigger Button */}
+          {user && (isAdmin || isSuperAdmin) && (
+            <div className="relative group ml-1">
               <button className={`${navLinkStyle} flex items-center gap-1 cursor-pointer`}>
-                Admin <ChevronDown size={14} />
+                Manage <ChevronDown size={14} className="opacity-70 group-hover:rotate-180 transition-transform" />
               </button>
 
-              {/* The Dropdown Panel */}
-              <div className="absolute top-full right-0 pt-2 w-56 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
-                <div className="bg-white rounded-xl shadow-xl border border-slate-100 overflow-hidden p-1 flex flex-col">
-                  
-                  <div className="px-3 py-2 text-xs font-semibold text-slate-400 uppercase">Management</div>
-                  
-                  <Link to="/admin/projects" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
-                    <LayoutDashboard size={16} /> Dashboard
+              <div className="absolute top-full left-0 pt-1 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-100">
+                <div className="bg-white rounded-md shadow-lg border border-gray-200 py-1 flex flex-col">
+                  <Link to="/admin/projects" className="flex items-center gap-2 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                    <LayoutDashboard size={14} /> Dashboard
                   </Link>
-                  
-                  <Link to="/admin/pending-users" className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg">
-                    <Users size={16} /> Pending Users
+                  <Link to="/admin/pending-users" className="flex items-center gap-2 px-3 py-1.5 text-[13px] text-gray-700 hover:bg-blue-50 hover:text-blue-700">
+                    <Users size={14} /> Pending Users
                   </Link>
-
                   {isSuperAdmin && (
-                    <Link to="/superadmin" className="flex items-center gap-2 px-3 py-2 text-sm text-amber-600 hover:bg-amber-50 rounded-lg mt-1 border-t border-slate-100">
-                      <ShieldAlert size={16} /> Super Admin
-                    </Link>
+                    <div className="mt-1 pt-1 border-t border-gray-100">
+                      <Link to="/superadmin" className="flex items-center gap-2 px-3 py-1.5 text-[13px] text-red-600 hover:bg-red-50">
+                        <ShieldAlert size={14} /> Super Admin
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           )}
-
-          <Link className={navLinkStyle} to="/contact">Contact</Link>
         </div>
 
         {/* --- Desktop Auth Buttons --- */}
-        <div className="hidden md:flex items-center gap-2 ml-4 border-l border-slate-200 pl-4">
+        <div className="hidden md:flex items-center gap-2 ml-auto">
           {!user ? (
             <>
-              <Link className={`${authButtonStyle} text-slate-600 hover:bg-slate-100`} to="/login">
-                Login
+              <Link className={`${authButtonStyle} text-gray-600 hover:text-gray-900 hover:bg-gray-100`} to="/login">
+                Sign in
               </Link>
-              <Link className={`${authButtonStyle} bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-200`} to="/signup">
-                Sign Up
+              <Link className={`${authButtonStyle} border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm`} to="/signup">
+                Sign up
               </Link>
             </>
           ) : (
-            <button
-              onClick={handleLogout}
-              className={`${authButtonStyle} text-red-600 bg-red-50 hover:bg-red-100`}
-            >
-              Logout
+            <button onClick={handleLogout} className={`${authButtonStyle} text-red-600 border border-red-200 bg-white hover:bg-red-50 shadow-sm`}>
+              Sign out
             </button>
           )}
         </div>
@@ -139,32 +110,30 @@ function Nav() {
 
       {/* --- Mobile Menu --- */}
       {isOpen && (
-        <div className="md:hidden bg-white border-t border-slate-200 shadow-xl animate-in slide-in-from-top-2">
-          <div className="flex flex-col p-4 space-y-1">
-            <Link className="block px-4 py-2 text-base font-medium text-slate-600 hover:bg-slate-50 rounded-lg" to="/" onClick={() => setIsOpen(false)}>Home</Link>
-            <Link className="block px-4 py-2 text-base font-medium text-slate-600 hover:bg-slate-50 rounded-lg" to="/about" onClick={() => setIsOpen(false)}>About</Link>
-            <Link className="block px-4 py-2 text-base font-medium text-slate-600 hover:bg-slate-50 rounded-lg" to="/features" onClick={() => setIsOpen(false)}>Features</Link>
-            
-            {/* Mobile Admin Links (Shown directly in list) */}
-            {session && (isAdmin || isSuperAdmin) && (
-              <div className="py-2 space-y-1 border-y border-slate-100 my-2">
-                <div className="px-4 text-xs font-bold text-slate-400 uppercase">Admin Controls</div>
-                <Link className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50" to="/admin/projects" onClick={() => setIsOpen(false)}>• Dashboard</Link>
-                <Link className="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50" to="/admin/pending-users" onClick={() => setIsOpen(false)}>• Pending Users</Link>
+        <div className="md:hidden bg-white border-b border-gray-200 shadow-sm">
+          <div className="flex flex-col p-2 space-y-1">
+            <Link className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md" to="/" onClick={() => setIsOpen(false)}>Overview</Link>
+            <Link className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md" to="/about" onClick={() => setIsOpen(false)}>About</Link>
+            <Link className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md" to="/features" onClick={() => setIsOpen(false)}>Features</Link>
+
+            {user && (isAdmin || isSuperAdmin) && (
+              <div className="py-2 border-y border-gray-100 my-1">
+                <div className="px-3 py-1 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Administration</div>
+                <Link className="flex px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md" to="/admin/projects" onClick={() => setIsOpen(false)}>Dashboard</Link>
+                <Link className="flex px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md" to="/admin/pending-users" onClick={() => setIsOpen(false)}>Pending Users</Link>
                 {isSuperAdmin && (
-                  <Link className="block px-4 py-2 text-sm text-amber-600 font-medium" to="/superadmin" onClick={() => setIsOpen(false)}>• Super Admin</Link>
+                  <Link className="flex px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md" to="/superadmin" onClick={() => setIsOpen(false)}>Super Admin</Link>
                 )}
               </div>
             )}
 
             {!user ? (
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-slate-100">
-                <Link className="flex justify-center py-2 text-sm font-bold text-slate-700 border border-slate-200 rounded-lg" to="/login" onClick={() => setIsOpen(false)}>Login</Link>
-                <Link className="flex justify-center py-2 text-sm font-bold text-white bg-blue-600 rounded-lg" to="/signup" onClick={() => setIsOpen(false)}>Sign Up</Link>
-                <Link className="col-span-2 flex justify-center py-2 text-sm text-slate-500 hover:text-blue-600" to="/companyRegister" onClick={() => setIsOpen(false)}>Register Company</Link>
+              <div className="flex gap-2 pt-2 border-t border-gray-100 px-2 mt-2">
+                <Link className="flex-1 text-center py-2 text-sm text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium" to="/login" onClick={() => setIsOpen(false)}>Sign In</Link>
+                <Link className="flex-1 text-center py-2 text-sm text-white bg-gray-800 hover:bg-gray-900 rounded-md font-medium" to="/signup" onClick={() => setIsOpen(false)}>Sign Up</Link>
               </div>
             ) : (
-              <button onClick={handleLogout} className="w-full mt-4 py-2 text-sm font-bold text-red-600 bg-red-50 rounded-lg">Logout</button>
+              <button onClick={handleLogout} className="w-full mt-2 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md border border-red-200">Sign Out</button>
             )}
           </div>
         </div>

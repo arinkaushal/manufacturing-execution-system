@@ -6,14 +6,14 @@ import {
   useNodesData,
   useNodeId,
 } from "@xyflow/react";
-import React,{ useEffect, useReducer, useState } from "react";
+import React, { useEffect, useReducer, useState } from "react";
 import DeleteButton from "./deleteNode";
 import { ChevronDown, CircleChevronRight } from "lucide-react";
 import DuplicateNode from "./duplicateNode";
 
 
 function Processing({ id, data }) {
-  const currentID=useNodeId();
+  const currentID = useNodeId();
   const { setNodes } = useReactFlow();
   const [toggle, setToggle] = useState(false);
 
@@ -21,28 +21,28 @@ function Processing({ id, data }) {
     return { ...state, ...action };
   }
 
-const [state, dispatch] = useReducer(
-  reducer,
-  null,
-  () => ({
-    processName: data?.processName || "",
-    machineId: data?.machineId || "",
-    rateUnitsPerHour: data?.rateUnitsPerHour || 0,
-    inputRate: data?.inputRate || 0,
-    setupTimeMin: data?.setupTimeMin || 60,
-    operatorCount: data?.operatorCount || 1,
-    operatorSkill: data?.operatorSkill || "",
-    status: data?.status || "Null",
-    hoursPerDay: data?.hoursPerDay || 8,
-    daysPerWeek: data?.daysPerWeek || 5,
-    machineCostPerHour: data?.machineCostPerHour || 0,
-    laborCostPerHour: data?.laborCostPerHour || 0,
-    totalProcessingCost: data?.totalProcessingCost || 0,
-    time: data?.time || "",
-    total: data?.total || 0,
-    totalTimeHours: data?.totalTimeHours || 0,
-  })
-);
+  const [state, dispatch] = useReducer(
+    reducer,
+    null,
+    () => ({
+      processName: data?.processName || "",
+      machineId: data?.machineId || "",
+      rateUnitsPerHour: data?.rateUnitsPerHour || 0,
+      inputRate: data?.inputRate || 0,
+      setupTimeMin: data?.setupTimeMin || 60,
+      operatorCount: data?.operatorCount || 1,
+      operatorSkill: data?.operatorSkill || "",
+      status: data?.status || "Null",
+      hoursPerDay: data?.hoursPerDay || 8,
+      daysPerWeek: data?.daysPerWeek || 5,
+      machineCostPerHour: data?.machineCostPerHour || 0,
+      laborCostPerHour: data?.laborCostPerHour || 0,
+      totalProcessingCost: data?.totalProcessingCost || 0,
+      time: data?.time || "",
+      total: data?.total || 0,
+      totalTimeHours: data?.totalTimeHours || 0,
+    })
+  );
   const updateNodeData = (patch) => {
     setNodes((ns) =>
       ns.map((n) => (n.id === id ? { ...n, data: { ...n.data, ...patch } } : n))
@@ -74,7 +74,7 @@ const [state, dispatch] = useReducer(
   const targetId = connections.find((c) => c.source === id)?.target;
   const targetData = useNodesData(targetId);
   const sourceData = useNodesData(sourceId);
-  const [statCol,setStatCol] = useState(true);
+  const [statCol, setStatCol] = useState("null");
 
   useEffect(() => {
     if (!sourceData || sourceData.type !== "inventory") return;
@@ -104,36 +104,28 @@ const [state, dispatch] = useReducer(
 
     const time = `${weeks} weeks ${days} days ${hours} hours ${minutes} minutes`;
 
-    let status = "";
+    let status = "No Bottleneck";
+    let newStatCol = "null";
 
     if (targetData && targetData.type === "processing") {
       const targetRate = Number(targetData.data.rateUnitsPerHour);
 
       if (targetRate > rate) {
         status = "Bottleneck in this node";
-        setStatCol("red");
+        newStatCol = "red";
       }
     }
 
-    if (status) {
-      dispatch({ time, total, status, totalTimeHours });
-      updateNodeData({
-        ...state,
-        time,
-        total,
-        status,
-        totalTimeHours,
-      });
-    } else {
-      dispatch({ time, total, totalTimeHours });
-      updateNodeData({
-        ...state,
-        time,
-        total,
-        totalTimeHours,
-      });
-    }
-    console.log("LOG FROM PROCESSING in processing.jsx",state.status);
+    setStatCol(newStatCol);
+    dispatch({ time, total, status, totalTimeHours });
+    updateNodeData({
+      time,
+      total,
+      status,
+      totalTimeHours,
+      effectiveRate: rate,
+    });
+    console.log("LOG FROM PROCESSING in processing.jsx", status);
   }, [
     state.daysPerWeek,
     state.hoursPerDay,
@@ -147,7 +139,7 @@ const [state, dispatch] = useReducer(
     if (!sourceData || sourceData.type !== "processing") return;
 
     const total = Number(sourceData.data.total);
-    const sourceRate = Number(sourceData.data.rateUnitsPerHour);
+    const sourceRate = Number(sourceData.data.effectiveRate || sourceData.data.rateUnitsPerHour);
     const nodeRate = Number(state.rateUnitsPerHour);
     const hoursPerDay = Number(state.hoursPerDay);
     const daysPerWeek = Number(state.daysPerWeek);
@@ -173,24 +165,25 @@ const [state, dispatch] = useReducer(
 
     const time = `${weeks} weeks ${days} days ${hours} hours ${minutes} minutes`;
 
-    let status = "";
+    let status = "No Bottleneck";
+    let newStatCol = "null";
     if (sourceRate < nodeRate) {
-      setStatCol("yellow");
-      status = "Bottleneck in previous node";}
-    else if (sourceRate > nodeRate) {
-            setStatCol("red");
+      newStatCol = "yellow";
+      status = "Bottleneck in previous node";
+    } else if (sourceRate > nodeRate) {
+      newStatCol = "red";
+      status = "Bottleneck in this node";
+    }
 
-      status = "Bottleneck in this node";}
-
-
+    setStatCol(newStatCol);
     dispatch({ time, total, status, totalTimeHours });
 
     updateNodeData({
-      ...state,
       time,
       total,
       status,
       totalTimeHours,
+      effectiveRate: effectiveRate,
     });
   }, [
     state.daysPerWeek,
@@ -198,6 +191,9 @@ const [state, dispatch] = useReducer(
     state.rateUnitsPerHour,
     state.setupTimeMin,
     sourceData?.data?.totalRequired,
+    sourceData?.data?.total,
+    sourceData?.data?.rateUnitsPerHour,
+    sourceData?.data?.effectiveRate,
   ]);
 
   return (
@@ -207,14 +203,14 @@ const [state, dispatch] = useReducer(
           <h1 className="p-4 text-xl font-semibold text-white ">
             Processing
           </h1>
-                  <DuplicateNode NodeId={id}/>
+          <DuplicateNode NodeId={id} />
 
         </div>
         <div className="absolute right-4 top-4">
           <DeleteButton nodeId={id} />
 
         </div>
-        <div className="p-4 bg-white rounded-2xl shadow-lg flex flex-col gap-3">
+        <div className="p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex flex-col gap-3">
           <div className="flex flex-col">
             <label>Process Name:</label>
             <input
@@ -249,7 +245,7 @@ const [state, dispatch] = useReducer(
           <div className="flex">
             <div >Status:</div>
             <div className={`rounded-full mx-2 px-3 text-white
-            ${statCol==="yellow"?"bg-yellow-500" :statCol==="red"?"bg-red-500":statCol==="null"?"bg-gray-400":"bg-gray-400"}`}>
+            ${statCol === "yellow" ? "bg-yellow-500" : statCol === "red" ? "bg-red-500" : statCol === "null" ? "bg-gray-400" : "bg-gray-400"}`}>
               {state.status}
             </div>
             <div className="absolute right-4">

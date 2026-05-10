@@ -1,4 +1,4 @@
-import React,{ useReducer, useEffect, useState } from "react";
+import React, { useReducer, useEffect, useState } from "react";
 import {
   Position,
   Handle,
@@ -26,13 +26,14 @@ function Assembly({ id, data }) {
     .filter((p) => p && p.data)
     .map((p) => p.data.amount);
 
-  
+
 
   function reducer(state, action) {
     return { ...state, ...action };
   }
 
-  const [state, dispatch] = useReducer(reducer,null,()=>({name: data?.name || "",
+  const [state, dispatch] = useReducer(reducer, null, () => ({
+    name: data?.name || "",
     unitsPerHr: data?.unitsPerHr || 0,
     hoursPerDay: data?.hoursPerDay || 8,
     daysPerWeek: data?.daysPerWeek || 5,
@@ -40,7 +41,8 @@ function Assembly({ id, data }) {
     qualityPass: data?.qualityPass || "",
     machineCostPerHour: data?.machineCostPerHour || 0,
     laborCostPerHour: data?.laborCostPerHour || 0,
-    assemblyCost: data?.assemblyCost || 0,}));
+    assemblyCost: data?.assemblyCost || 0,
+  }));
 
   const updateNodeData = (patch) => {
     setNodes((ns) =>
@@ -113,7 +115,7 @@ function Assembly({ id, data }) {
         <DeleteButton nodeId={id} />
 
       </div>
-      <div className="p-4 bg-white rounded-2xl shadow-lg ">
+      <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl ">
         <div className="flex gap-3 ">
           <div className="flex flex-col w-[60%]">
             <label>Name:</label>

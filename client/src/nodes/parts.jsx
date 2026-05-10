@@ -22,7 +22,7 @@ function Parts({ id, data }) {
 
   const poAmount = Number(sourceData?.data?.quantity || 0);
 
-  
+
 
   function reducer(state, action) {
     return { ...state, ...action };
@@ -31,16 +31,16 @@ function Parts({ id, data }) {
   const [state, dispatch] = useReducer(
     reducer,
     null,
-    ()=>({
+    () => ({
       pn: data?.pn || "",
-    amount: data?.amount || 0,
-    totalRequired: data?.totalRequired || 0,
-    sku: data?.sku || "",
-    unitCost: data?.unitCost || 0,
-    totalCost: data?.totalCost || 0,
-    name: data?.name || "",
-  })
-);
+      amount: data?.amount || 0,
+      totalRequired: data?.totalRequired || 0,
+      sku: data?.sku || "",
+      unitCost: data?.unitCost || 0,
+      totalCost: data?.totalCost || 0,
+      name: data?.name || "",
+    })
+  );
 
   const updateNodeData = (patch) => {
     setNodes((ns) =>
@@ -81,7 +81,7 @@ function Parts({ id, data }) {
         <DeleteButton nodeId={id} />
 
       </div>
-      <div className="p-4 bg-gray-50 rounded-2xl shadow-lg flex flex-col gap-3">
+      <div className="p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col gap-3">
         <div className="flex">
           <div className="flex flex-col w-full pr-2">
             <label>Name:</label>

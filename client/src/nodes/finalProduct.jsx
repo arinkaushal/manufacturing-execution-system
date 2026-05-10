@@ -1,4 +1,4 @@
-import React,{ useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Position,
   Handle,
@@ -45,7 +45,7 @@ function FinalProduct({ id, data }) {
 
       </div>
 
-      <div className="p-4 bg-white rounded-2xl shadow-lg flex flex-col gap-3">
+      <div className="p-4 bg-lime-50 rounded-2xl flex flex-col gap-3">
         <div className="flex flex-col gap-2">
           <div>
             <label className="text-sm font-medium">Item Name</label>

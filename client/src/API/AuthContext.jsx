@@ -10,7 +10,27 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        const parsed = JSON.parse(storedUser);
+        if (parsed.message && !parsed.companyRole) {
+          // Bad session cached from raw login. Try pulling from backend
+          import('./authApi').then(({ getSession }) => {
+            getSession().then(sessionData => {
+              localStorage.setItem("user", JSON.stringify(sessionData));
+              setUser(sessionData);
+              setLoading(false);
+            }).catch(() => {
+              localStorage.removeItem("user");
+              setUser(null);
+              setLoading(false);
+            });
+          });
+          return; // Don't setLoading(false) yet
+        }
+        setUser(parsed);
+      } catch (e) {
+        localStorage.removeItem("user");
+      }
     }
     setLoading(false);
   }, []);

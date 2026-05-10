@@ -1,17 +1,10 @@
 import { useState } from "react";
 
-// Mock functions for demo
-const createAdmin = async (data) => {
-  return new Promise((resolve) => setTimeout(resolve, 1000));
-};
-
-const useSession = () => ({
-  user: { companyRole: "SUPER_ADMIN" },
-  loading: false
-});
+import { useAuth } from "@/API/AuthContext";
+import { createAdmin } from "@/API/authApi";
 
 export default function SuperAdminPage() {
-  const { user, loading } = useSession();
+  const { user, loading } = useAuth();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -37,17 +30,20 @@ export default function SuperAdminPage() {
 
   const handleCreateAdmin = async () => {
     if (!name || !email || !password) return;
-    
+
     setIsSubmitting(true);
-    await createAdmin({ name, email, password });
-    setIsSubmitting(false);
-    setShowSuccess(true);
-    
-    setName("");
-    setEmail("");
-    setPassword("");
-    
-    setTimeout(() => setShowSuccess(false), 3000);
+    try {
+      await createAdmin({ name, email, password });
+      setShowSuccess(true);
+      setName("");
+      setEmail("");
+      setPassword("");
+      setTimeout(() => setShowSuccess(false), 3000);
+    } catch (err) {
+      alert(err.message || "Failed to create admin account. Check if email already exists.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -71,7 +67,7 @@ export default function SuperAdminPage() {
         {/* Form */}
         <div className="bg-white rounded-lg p-8 backdrop-blur">
           <h2 className="text-xl font-semibold mb-6">Create Admin Account</h2>
-          
+
           <div className="space-y-5">
             <div>
               <label className="block text-sm font-medium text-black mb-2">

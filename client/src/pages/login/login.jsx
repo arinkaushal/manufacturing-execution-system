@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { loginUser } from '../../API/authApi'; 
+import { loginUser } from '../../API/authApi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/API/AuthContext';
 
@@ -15,9 +15,14 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await loginUser({ email, password });
-      console.log('Logged in', data);
-      login(data);
+      await loginUser({ email, password });
+
+      // Fetch real session data since backend login only returns a message
+      const { getSession } = await import('../../API/authApi');
+      const sessionData = await getSession();
+
+      console.log('Logged in', sessionData);
+      login(sessionData);
       navigate('/');
     } catch (err) {
       console.error('Login failed', err);
@@ -57,14 +62,15 @@ function Login() {
             </label>
             <a href="#" className="text-xs md:text-sm text-blue-600 hover:text-blue-800">Forgot password?</a>
           </div>
-       
+
           <button type="submit" className="w-full px-3 md:px-4 py-2 md:py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-150 cursor-pointer text-sm md:text-base">Sign In</button>
         </form>
 
-        <div className="bg-slate-50 px-6 md:px-8 py-4 border-t text-center">
+        <div className="bg-slate-50 px-6 md:px-8 py-4 border-t text-center flex flex-col gap-2">
           <p className="text-xs md:text-sm text-slate-600">Don't have an account? <Link to="/signup" className="text-blue-600 hover:text-blue-800 font-medium">Sign up</Link></p>
+          <p className="text-xs md:text-sm text-slate-600">Want to onboard your organization? <Link to="/companyRegister" className="text-blue-600 hover:text-blue-800 font-medium">Register Company</Link></p>
         </div>
-        
+
       </div>
     </div>
   );

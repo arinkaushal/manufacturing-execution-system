@@ -7,7 +7,7 @@ import {
 } from "@xyflow/react";
 import React, { useCallback, useReducer, useEffect } from "react";
 import DeleteButton from "./deleteNode";
-import { CircleChevronRight,CircleAlert ,CircleCheckBig} from "lucide-react";
+import { CircleChevronRight, CircleAlert, CircleCheckBig } from "lucide-react";
 import DuplicateNode from "./duplicateNode";
 
 const UNITS = {
@@ -73,7 +73,7 @@ function Inventory({ id, data }) {
       <div className="absolute right-4 top-4">
         <DeleteButton nodeId={id} />
       </div>
-      <div className="p-4 bg-gray-50 rounded-2xl shadow-lg flex flex-col gap-3">
+      <div className="p-4 bg-slate-100 border border-slate-200 rounded-2xl flex flex-col gap-3">
         <div className="flex flex-col">
           <label>Amount:</label>
           <div className="flex">

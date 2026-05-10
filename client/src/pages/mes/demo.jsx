@@ -91,44 +91,44 @@ export default function Demo() {
         onConnect={onConnect}
         edgeTypes={edgeTypes}
       >
-        <MiniMap   nodeBorderRadius={50}
-  nodeColor={(node) => {
-  switch (node.type) {
-    case "productionOrder":
-      return "#3b82f6";
-    case "inventory":
-      return "#64748b";
-      case "parts":
-      return "#6366f1";
-      case "processing":
-      return "#10b981";
-      case "assembly":
-      return "#f59e0b";
-      case "finalProduct":
-        return "#84cc16"
-    default:
-      return "blue";
-  }
-}}></MiniMap>
+        <MiniMap nodeBorderRadius={50}
+          nodeColor={(node) => {
+            switch (node.type) {
+              case "productionOrder":
+                return "#3b82f6";
+              case "inventory":
+                return "#64748b";
+              case "parts":
+                return "#6366f1";
+              case "processing":
+                return "#10b981";
+              case "assembly":
+                return "#f59e0b";
+              case "finalProduct":
+                return "#84cc16"
+              default:
+                return "blue";
+            }
+          }}></MiniMap>
         <Ribbon
           bgColorKey={bgColorKey}
           setBgColorKey={setBgColorKey}
           colorKey={colorKey}
           setColorKey={setColorKey}
-         
+
         />
 
         <Background
           color={color[colorKey]}
           bgColor={backgroundColor[bgColorKey]}
           size={2}
-          
+
         />
 
         <Controls className="scale-90">
           {!isFull && (
             <button onClick={handleFullscreen} className="react-flow__controls-button">
-              <Maximize2  />
+              <Maximize2 />
             </button>
           )}
           {isFull && (
@@ -136,8 +136,8 @@ export default function Demo() {
               <Minimize2 />
             </button>
           )}
-         <AutoLayoutButton/>
-          
+          <AutoLayoutButton />
+
 
 
         </Controls>
@@ -149,38 +149,27 @@ export default function Demo() {
 import ThemeRibbonContent from "./themePopup";
 import NodesRibbonContent from "./nodesRibbonContent";
 
-function Ribbon({
-  bgColorKey,
-  setBgColorKey,
-  colorKey,
-  setColorKey,
-}) {
+function Ribbon({ bgColorKey, setBgColorKey, colorKey, setColorKey }) {
   const [activeTab, setActiveTab] = useState(null);
 
   return (
-    <div className="sticky top-0 z-20 bg-gray-50 shadow-md">
-      <div className="flex items-center gap-4 px-4 h-12 border-b">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-white border border-gray-300 rounded-md shadow-sm flex flex-col min-w-[280px]">
+      <div className="flex bg-gray-50 rounded-t-md">
         <RibbonTab
           label="Nodes"
           active={activeTab === "nodes"}
-          onClick={() =>
-            setActiveTab(activeTab === "nodes" ? null : "nodes")
-          }
+          onClick={() => setActiveTab(activeTab === "nodes" ? null : "nodes")}
         />
-
         <RibbonTab
           label="Theme"
           active={activeTab === "theme"}
-          onClick={() =>
-            setActiveTab(activeTab === "theme" ? null : "theme")
-          }
+          onClick={() => setActiveTab(activeTab === "theme" ? null : "theme")}
         />
       </div>
 
       {activeTab && (
-        <div className="px-4 py-3 border-b bg-gray-100">
+        <div className="p-3 border-t border-gray-200 bg-white rounded-b-md text-xs">
           {activeTab === "nodes" && <NodesRibbonContent />}
-
           {activeTab === "theme" && (
             <ThemeRibbonContent
               bgColorKey={bgColorKey}
@@ -195,18 +184,14 @@ function Ribbon({
   );
 }
 
-
-
 function RibbonTab({ label, active, onClick }) {
   return (
     <button
       onClick={onClick}
-      className={`px-3 py-1 rounded-md text-sm font-medium
-        ${
-          active
-            ? "bg-white shadow text-blue-600"
-            : "hover:bg-gray-200 text-gray-700"
-        }`}
+      className={`flex-1 py-1.5 px-3 text-[13px] font-medium transition-colors border-b-2
+        ${active ? 'border-[#fd8c73] bg-white text-gray-900 border-x border-t-transparent border-x-gray-200 first:border-l-transparent last:border-r-transparent' : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-100'}
+      `}
+      style={active ? { marginBottom: '-1px' } : {}}
     >
       {label}
     </button>
