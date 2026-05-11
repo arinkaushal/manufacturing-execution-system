@@ -29,6 +29,11 @@ export const initSocket = (server, sessionMiddleware) => {
       socket.leave(projectId);
     });
 
+    // Live drag relay — forward single-node position to everyone else in the room
+    socket.on("node:drag", ({ projectId, id, position }) => {
+      socket.to(projectId).emit("node:drag", { id, position });
+    });
+
     socket.on("nodes:update", ({ projectId, nodes }) => {
       socket.to(projectId).emit("nodes:update", nodes);
     });

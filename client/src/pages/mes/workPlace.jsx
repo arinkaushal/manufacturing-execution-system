@@ -11,9 +11,7 @@ import { variant } from "./backgroundTheme/variant";
 import Ribbon from "./ribbon";
 import { Maximize2, Minimize2 } from "lucide-react";
 import AutoLayoutButton from "../../nodes/autoLayout";
-// import { getNodes, setNodesFromProject, updateNodes,} from "./nodes";
-// import { getEdges, setEdgesFromProject, updateEdges, } from "./edges";
-import { fetchProjects, fetchProjectById, saveProject, } from "../../API/projectApi";
+import { fetchProjects, fetchProjectById, saveProject } from "../../API/projectApi";
 import { connectSocket, disconnectSocket } from "../../API/socket";
 import {
   ReactFlow,
@@ -44,29 +42,47 @@ const nodeTypes = {
 const edgeTypes = { "custom-edge": CustomEdge };
 
 export default function WorkPlace() {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-
-  const isRemoteUpdateRef = useRef(false);
+  const [nodes, setNodes] = useNodesState([]);
+  const [edges, setEdges] = useEdgesState([]);
 
   const [isCollaborative, setIsCollaborative] = useState(false);
   const socketRef = useRef(null);
-  const [projects, setProjects] = useState([]);
+
+  // Use a ref so drag/connect callbacks always read the latest projectId
+  // without needing to be re-created on every project switch.
+  const activeProjectIdRef = useRef(null);
   const [activeProjectId, setActiveProjectId] = useState(null);
 
+  // Mirror full nodes array so onNodeDragStop can emit ALL nodes (not just dragged ones)
+  const nodesRef = useRef([]);
+  // RAF handle — ensures we emit at most once per animation frame
+  const dragRafRef = useRef(null);
+  const pendingDragRef = useRef(null);
+
+  const [projects, setProjects] = useState([]);
   const [bgColorKey, setBgColorKey] = useState("white");
   const [colorKey, setColorKey] = useState("dark");
   const [variantKey, setVariantKey] = useState("dots");
   const { user, loading } = useSession();
-  console.log("User in WorkPlace:", user);
+
+  // Keep the refs in sync whenever state changes
+  useEffect(() => {
+    activeProjectIdRef.current = activeProjectId;
+  }, [activeProjectId]);
+
+  useEffect(() => {
+    nodesRef.current = nodes;
+  }, [nodes]);
+
+  // ── Fetch project list ────────────────────────────────────────────────────
   useEffect(() => {
     fetchProjects()
       .then(setProjects)
       .catch(() => setProjects([]));
   }, []);
 
-
-  const handleSelectProject = async (projectId) => {
+  // ── Load a project ────────────────────────────────────────────────────────
+  const handleSelectProject = useCallback(async (projectId) => {
     if (!projectId) {
       setNodes([]);
       setEdges([]);
@@ -77,158 +93,131 @@ export default function WorkPlace() {
     setNodes(structuredClone(project.nodes));
     setEdges(structuredClone(project.edges));
     setActiveProjectId(project._id);
-  };
-  useEffect(() => {
-    if (
-      !isCollaborative ||
-      !socketRef.current ||
-      !activeProjectId ||
-      isRemoteUpdateRef.current
-    ) {
-      isRemoteUpdateRef.current = false; 
+  }, []);
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  const handleSaveProject = useCallback(async () => {
+    if (!activeProjectIdRef.current) {
+      console.log("no active project to save");
       return;
     }
-
-    socketRef.current.emit("nodes:update", {
-      projectId: activeProjectId,
+    await saveProject({
+      projectId: activeProjectIdRef.current,
       nodes,
-    });
-  }, [nodes, isCollaborative, activeProjectId]);
-
-  useEffect(() => {
-    if (
-      !isCollaborative ||
-      !socketRef.current ||
-      !activeProjectId ||
-      isRemoteUpdateRef.current
-    ) {
-      isRemoteUpdateRef.current = false;
-      return;
-    }
-
-    socketRef.current.emit("edges:update", {
-      projectId: activeProjectId,
       edges,
     });
-  }, [edges, isCollaborative, activeProjectId]);
+    alert("Project saved");
+  }, [nodes, edges]);
 
+  // ── Socket / Collaboration ────────────────────────────────────────────────
   useEffect(() => {
     if (!isCollaborative || !activeProjectId) {
-      console.log("Not collaborative or no active project, skipping socket connection");
+      // Tear down existing socket when collaboration is turned off
+      if (socketRef.current) {
+        if (activeProjectId) {
+          socketRef.current.emit("leave-project", activeProjectId);
+        }
+        disconnectSocket();
+        socketRef.current = null;
+      }
       return;
     }
-    socketRef.current = connectSocket();
-    socketRef.current.emit("join-project", activeProjectId);
 
-    socketRef.current.on("nodes:update", (nodes) => {
-      console.log("Received nodes update via socket:", nodes);
-      isRemoteUpdateRef.current = true;
-      setNodes(structuredClone(nodes));
-    });
+    const sock = connectSocket();
+    socketRef.current = sock;
+    sock.emit("join-project", activeProjectId);
 
-    socketRef.current.on("edges:update", (edges) => {
-      console.log("Received edges update via socket:", edges);
-      isRemoteUpdateRef.current = true;
-      setEdges(structuredClone(edges));
-    });
+    // Full node-array update — clears dragging:true on all nodes
+    const onNodesUpdate = (remoteNodes) => {
+      setNodes(structuredClone(remoteNodes).map((n) => ({ ...n, dragging: false })));
+    };
+
+    // *** Live drag: update position AND positionAbsolute, mark dragging:true ***
+    // React Flow uses positionAbsolute for rendering. Without it the node
+    // appears frozen even though 'position' changed in state.
+    const onNodeDrag = ({ id, position }) => {
+      setNodes((prev) =>
+        prev.map((n) =>
+          n.id === id
+            ? { ...n, position, positionAbsolute: position, dragging: true }
+            : n
+        )
+      );
+    };
+
+    // Full edge-array update
+    const onEdgesUpdate = (remoteEdges) => {
+      setEdges(structuredClone(remoteEdges));
+    };
+
+    sock.on("nodes:update", onNodesUpdate);
+    sock.on("node:drag", onNodeDrag);
+    sock.on("edges:update", onEdgesUpdate);
 
     return () => {
-      socketRef.current.emit("leave-project", activeProjectId);
+      sock.off("nodes:update", onNodesUpdate);
+      sock.off("node:drag", onNodeDrag);
+      sock.off("edges:update", onEdgesUpdate);
+      sock.emit("leave-project", activeProjectId);
       disconnectSocket();
+      socketRef.current = null;
     };
   }, [isCollaborative, activeProjectId]);
-  // const onNodesChange = useCallback(
-  //   (changes) => {
-  //     setNodes((prev) => {
-  //       const updated = applyNodeChanges(changes, prev);
 
-  //       if (isCollaborative && socketRef.current) {
-  //         socketRef.current.emit("nodes:update", {
-  //           projectId: activeProjectId,
-  //           nodes: updated,
-  //         });
-  //       }
+  // ── Node changes (local) ─────────────────────────────────────────────────
+  const onNodesChange = useCallback((changes) => {
+    setNodes((prev) => applyNodeChanges(changes, prev));
+  }, []);
 
-  //       return updated;
-  //     });
-  //   },
-  //   [isCollaborative, activeProjectId]
-  // );
+  // ── Edge changes (local) ─────────────────────────────────────────────────
+  const onEdgesChange = useCallback((changes) => {
+    setEdges((prev) => applyEdgeChanges(changes, prev));
+  }, []);
 
-
-  // const onEdgesChange = useCallback(
-  //   (changes) => {
-  //     setEdges((prev) => {
-  //       const updated = applyEdgeChanges(changes, prev);
-
-  //       if (isCollaborative && socketRef.current) {
-  //         socketRef.current.emit("edges:update", {
-  //           projectId: activeProjectId,
-  //           edges: updated,
-  //         });
-  //       }
-
-  //       return updated;
-  //     });
-  //   },
-  //   [isCollaborative, activeProjectId]
-  // );
-
-
-  // const onConnect = useCallback(
-  //   (params) => {
-  //     setEdges((prev) => {
-  //       const updated = addEdge(params, prev);
-
-  //       if (isCollaborative && socketRef.current) {
-  //         socketRef.current.emit("edges:update", {
-  //           projectId: activeProjectId,
-  //           edges: updated,
-  //         });
-  //       }
-
-  //       return updated;
-  //     });
-  //   },
-  //   [isCollaborative, activeProjectId]
-  // );
-
-  const onConnect = useCallback(
-    (params) => {
-      setEdges((prev) => {
-        const updated = addEdge(params, prev);
-
-        if (isCollaborative && socketRef.current && activeProjectId) {
-          socketRef.current.emit("edges:update", {
-            projectId: activeProjectId,
-            edges: updated,
-          });
-        }
-        console.log("emmmited change via socket:");
-
-        return updated;
+  // ── LIVE DRAG: RAF-throttled, emits id + position once per frame ─────────
+  const onNodeDrag = useCallback((_event, node) => {
+    if (!socketRef.current || !activeProjectIdRef.current) return;
+    // Store latest position; only schedule a new frame if one isn't queued
+    pendingDragRef.current = { id: node.id, position: node.position };
+    if (dragRafRef.current) return;
+    dragRafRef.current = requestAnimationFrame(() => {
+      dragRafRef.current = null;
+      if (!socketRef.current || !activeProjectIdRef.current) return;
+      const { id, position } = pendingDragRef.current;
+      socketRef.current.emit("node:drag", {
+        projectId: activeProjectIdRef.current,
+        id,
+        position,
       });
-    },
-    [isCollaborative, activeProjectId]
-  );
+    });
+  }, []);
 
+  // ── DRAG STOP: broadcast FULL node array for authoritative final sync ─────
+  // NOTE: allNodes param is only the dragged node(s), NOT the full canvas.
+  // Always use nodesRef.current which mirrors the complete nodes state.
+  const onNodeDragStop = useCallback(() => {
+    if (!socketRef.current || !activeProjectIdRef.current) return;
+    socketRef.current.emit("nodes:update", {
+      projectId: activeProjectIdRef.current,
+      nodes: nodesRef.current,
+    });
+  }, []);
 
-  const handleSaveProject = async () => {
-  if (!activeProjectId) {
-    console.log('no active project to save');
-    return;
-  }
+  // ── Connect edge ──────────────────────────────────────────────────────────
+  const onConnect = useCallback((params) => {
+    setEdges((prev) => {
+      const updated = addEdge(params, prev);
+      if (socketRef.current && activeProjectIdRef.current) {
+        socketRef.current.emit("edges:update", {
+          projectId: activeProjectIdRef.current,
+          edges: updated,
+        });
+      }
+      return updated;
+    });
+  }, []);
 
-  await saveProject({
-    projectId: activeProjectId,
-    nodes,
-    edges,
-  });
-  console.log("current nodes and edges that got saved in the DB",nodes,edges)
-  alert("Project saved");
-};
-
-
+  // ── Fullscreen ────────────────────────────────────────────────────────────
   const fullscreenRef = useRef(null);
   const [isFull, setIsFull] = useState(false);
 
@@ -249,17 +238,18 @@ export default function WorkPlace() {
     else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
   };
 
+  // ── Guards ────────────────────────────────────────────────────────────────
+  if (loading) return <div>Loading...</div>;
 
-    if (loading) return <div>Loading...</div>;
+  if (!user || !user.isApproved) {
+    return <div className="p-4">Awaiting approval</div>;
+  }
 
-if (!user || !user.isApproved) {
-  return <div className="p-4">Awaiting approval</div>;
-}
+  if (["ADMIN", "SUPER_ADMIN"].includes(user.companyRole)) {
+    return <div className="p-4">Admins cannot access workspace</div>;
+  }
 
-if (["ADMIN", "SUPER_ADMIN"].includes(user.companyRole)) {
-  return <div className="p-4">Admins cannot access workspace</div>;
-}
-
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div ref={fullscreenRef} className="h-full w-full relative">
       <ReactFlow
@@ -273,35 +263,24 @@ if (["ADMIN", "SUPER_ADMIN"].includes(user.companyRole)) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onNodeDrag={isCollaborative ? onNodeDrag : undefined}
+        onNodeDragStop={isCollaborative ? onNodeDragStop : undefined}
         edgeTypes={edgeTypes}
-        onNodeDragStop={() => {
-          if (isCollaborative && socketRef.current && activeProjectId) {
-            socketRef.current.emit("nodes:update", {
-              projectId: activeProjectId,
-              nodes,
-            });
-          }
-        }}
       >
-        <MiniMap nodeBorderRadius={50}
+        <MiniMap
+          nodeBorderRadius={50}
           nodeColor={(node) => {
             switch (node.type) {
-              case "productionOrder":
-                return "#3b82f6";
-              case "inventory":
-                return "#64748b";
-              case "parts":
-                return "#6366f1";
-              case "processing":
-                return "#10b981";
-              case "assembly":
-                return "#f59e0b";
-              case "finalProduct":
-                return "#84cc16"
-              default:
-                return "blue";
+              case "productionOrder": return "#3b82f6";
+              case "inventory":      return "#64748b";
+              case "parts":          return "#6366f1";
+              case "processing":     return "#10b981";
+              case "assembly":       return "#f59e0b";
+              case "finalProduct":   return "#84cc16";
+              default:               return "blue";
             }
-          }}></MiniMap>
+          }}
+        />
         <Panel position="top-left">
           <Ribbon
             bgColorKey={bgColorKey}
@@ -317,7 +296,6 @@ if (["ADMIN", "SUPER_ADMIN"].includes(user.companyRole)) {
             isCollaborative={isCollaborative}
             onToggleCollaborative={setIsCollaborative}
             socketRef={socketRef}
-
           />
         </Panel>
 
@@ -339,9 +317,6 @@ if (["ADMIN", "SUPER_ADMIN"].includes(user.companyRole)) {
             </button>
           )}
           <AutoLayoutButton />
-
-
-
         </Controls>
       </ReactFlow>
     </div>

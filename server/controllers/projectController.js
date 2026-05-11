@@ -117,35 +117,48 @@ export const saveProject = async (req, res) => {
 
 
 export const createProject = async (req, res) => {
-  const { name } = req.body;
+  try {
+    const { name } = req.body;
 
-  const project = await Project.create({
-    name,
-    company: req.user.company,
-    createdBy: req.user.id,
-    nodes: [],
-    edges: []
-  });
+    if (!name || !name.trim()) {
+      return res.status(400).json({ message: "Project name is required" });
+    }
 
-  res.status(201).json(project);
+    const project = await Project.create({
+      name: name.trim(),
+      company: req.user.company,
+      createdBy: req.user.id,
+      nodes: [],
+      edges: []
+    });
+
+    res.status(201).json(project);
+  } catch (error) {
+    console.error("❌ Create project failed:", error);
+    res.status(500).json({ message: "Failed to create project", error: error.message });
+  }
 };
 
 export const listProjects = async (req, res) => {
-  let projects;
+  try {
+    let projects;
 
-  if (
-    ["ADMIN", "SUPER_ADMIN"].includes(req.user.companyRole) ||
-    req.user.requestedRole === "LEAD_AUTOMATION_ENGINEER"
-  ) {
-    projects = await Project.find({ company: req.user.company });
-  } else {
-    const memberships = await ProjectMember.find({ user: req.user.id })
-      .populate("project");
+    if (
+      ["ADMIN", "SUPER_ADMIN"].includes(req.user.companyRole) ||
+      req.user.requestedRole === "LEAD_AUTOMATION_ENGINEER"
+    ) {
+      projects = await Project.find({ company: req.user.company }).sort({ updatedAt: -1 });
+    } else {
+      const memberships = await ProjectMember.find({ user: req.user.id })
+        .populate("project");
+      projects = memberships.map(m => m.project).filter(Boolean);
+    }
 
-    projects = memberships.map(m => m.project);
+    res.json(projects);
+  } catch (error) {
+    console.error("❌ List projects failed:", error);
+    res.status(500).json({ message: "Failed to list projects" });
   }
-
-  res.json(projects);
 };
 export const assignUserToProject = async (req, res) => {
   const { userId, role } = req.body;

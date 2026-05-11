@@ -1,4 +1,4 @@
-const API = "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : '');
 import axios from "axios";
 const request = async (url, method = "GET", body) => {
   const res = await fetch(API + url, {
@@ -21,7 +21,7 @@ export const fetchProjectWorkspace = (projectId) => request(`/api/projects/${pro
 export const createProject = (payload) =>
   request("/api/projects", "POST", payload);
 export const fetchProjectMembers = async (projectId) => {
-  const res = await axios.get(`http://localhost:5000/api/projects/${projectId}/members`,{withCredentials: true});
+  const res = await axios.get(`/api/projects/${projectId}/members`, { withCredentials: true });
   console.log("API Response:", res); 
   return res.data.data;
 };

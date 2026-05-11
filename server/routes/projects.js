@@ -16,13 +16,19 @@ import { requireWorkspaceAccess } from "../middlewares/requireWorkspaceAccess.js
 import { requireCompanyRole } from "../middlewares/requireCompanyRole.js";
 
 const router = express.Router();
-router.get("/:id", getProjectById);
-router.post("/save", saveProject);
-router.post("/:id/invite", inviteCollaborator);
-router.post( "/", authMiddleware, requireProjectCreator, createProject );
-router.get( "/", authMiddleware, listProjects );
-router.get( "/:projectId/members", authMiddleware, requireCompanyRole(["ADMIN","SUPER_ADMIN"]), getProjectMembers);
-router.post("/:projectId/assign", authMiddleware, requireCompanyRole(["ADMIN","SUPER_ADMIN"]), assignUserToProject);
+
+// ── Exact / fixed-segment routes FIRST ──────────────────────────────────────
+router.get("/",                 authMiddleware, listProjects);
+router.post("/",                authMiddleware, requireProjectCreator, createProject);
+router.post("/save",            saveProject);
+
+// ── Routes with named sub-segments (must come before /:id) ──────────────────
+router.get( "/:projectId/members",   authMiddleware, requireCompanyRole(["ADMIN","SUPER_ADMIN"]), getProjectMembers);
+router.post("/:projectId/assign",    authMiddleware, requireCompanyRole(["ADMIN","SUPER_ADMIN"]), assignUserToProject);
 router.get( "/:projectId/workspace", authMiddleware, requireWorkspaceAccess, getProjectWorkspace);
-router.get
-export default router;
+router.post("/:id/invite",           inviteCollaborator);
+
+// ── Generic wildcard LAST ────────────────────────────────────────────────────
+router.get("/:id", getProjectById);
+
+export default router;

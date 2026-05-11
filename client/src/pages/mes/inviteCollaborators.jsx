@@ -10,10 +10,10 @@ export default function InviteCollaborators({ projectId, onClose }) {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetchCompanyUsers()
+    fetchCompanyUsers(projectId)
       .then(setUsers)
       .catch(() => setUsers([]));
-  }, []);
+  }, [projectId]);
 
   if (!user || !["ADMIN", "SUPER_ADMIN"].includes(user.companyRole)) {
     return null;

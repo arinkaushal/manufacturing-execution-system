@@ -1,4 +1,4 @@
-const API = "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL || "";
 
 const request = async (url, method = "GET", body) => {
   const res = await fetch(API + url, {
@@ -16,4 +16,7 @@ const request = async (url, method = "GET", body) => {
   return data; 
 };
 
-export const fetchCompanyUsers = () => request("/api/users/company");
+export const fetchCompanyUsers = (projectId) => {
+  const url = projectId ? `/api/users/company?projectId=${projectId}` : "/api/users/company";
+  return request(url);
+};
