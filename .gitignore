@@ -7,13 +7,29 @@ build/
 
 # Environment variables
 .env
+.env.*
 client/.env
 server/.env
 
 # Logs
-npm-debug.log
-yarn-debug.log
-yarn-error.log
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Vite
-.vite
+.vite/
+
+# Docker
+*.pid
+docker-compose.override.yml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

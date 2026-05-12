@@ -5,8 +5,6 @@ services:
       - "5000:5000"
     env_file:
       - ./server/.env
-    environment:
-      - MONGO_URI=mongodb+srv://arinkaushal06_db_user:0713%40Arin@cluster0.qsrnbgv.mongodb.net/
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
