@@ -8,7 +8,7 @@ let socket;
 // on /socket.io automatically, so we connect directly to localhost:5000.
 const SOCKET_URL = import.meta.env.PROD
   ? window.location.origin   // Docker: same-origin → Nginx → server:5000
-  : "http://localhost:5000"; // Dev: direct to backend
+  : "http://backend-service:5000"; // Dev: direct to backend
 
 export const connectSocket = () => {
   if (!socket || socket.disconnected) {
