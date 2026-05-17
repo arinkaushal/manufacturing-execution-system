@@ -4,8 +4,10 @@ pipeline {
     environment {
         KUBECONFIG = "/var/jenkins_home/.kube/config"
 
-        FRONTEND_IMAGE = "arinkaushal/mes-client:v1"
-        BACKEND_IMAGE  = "arinkaushal/mes-server:v1"
+        IMAGE_TAG = "${BUILD_NUMBER}"
+
+        FRONTEND_IMAGE = "arinkaushal/mes-client:${IMAGE_TAG}"
+        BACKEND_IMAGE  = "arinkaushal/mes-server:${IMAGE_TAG}"
     }
 
     stages {
@@ -49,7 +51,10 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/'
+                sh '''
+                kubectl set image deployment/frontend-deployment frontend=$FRONTEND_IMAGE
+                kubectl set image deployment/backend-deployment backend=$BACKEND_IMAGE
+                '''
             }
         }
     }
