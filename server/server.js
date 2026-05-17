@@ -7,6 +7,8 @@ import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import client from 'prom-client';
+
 import connectDB from './dbCon.js';
 import authRoutes from './routes/auth.js';
 import projectRoutes from './routes/projects.js';
@@ -17,9 +19,24 @@ const app = express();
 const FRONTEND = process.env.VITE_APP_URL;
 const MONGO = process.env.MONGO_URI;
 
+/* ---------------- PROMETHEUS ---------------- */
+
+// collect default Node.js metrics
+client.collectDefaultMetrics();
+
+// metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+  } catch (err) {
+    res.status(500).end(err);
+  }
+});
+
+/* ------------------------------------------- */
 
 app.use(express.json());
-
 
 app.use(cors({
   origin: FRONTEND,
@@ -36,22 +53,21 @@ app.options('*', cors({
 connectDB(MONGO);
 
 const sessionMiddleware = session({
-    secret: process.env.SESSION_SECRET || 'dev_secret_key',
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: MONGO
-    }),
-    cookie: {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: false, 
-      maxAge: 1000 * 60 * 60 * 24
-    },
-  })
-app.use(sessionMiddleware
-);
+  secret: process.env.SESSION_SECRET || 'dev_secret_key',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: MONGO
+  }),
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: false,
+    maxAge: 1000 * 60 * 60 * 24
+  },
+});
 
+app.use(sessionMiddleware);
 
 app.use('/api/auth', authRoutes);
 app.use("/api/projects", projectRoutes);
@@ -60,10 +76,8 @@ app.use("/api/users", userRoutes);
 const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 
-
 initSocket(server, sessionMiddleware);
 
-server.listen(5000, () => {
-  console.log("Server + Socket.IO running on port 5000");
+server.listen(PORT, () => {
+  console.log(`Server + Socket.IO running on port ${PORT}`);
 });
-
