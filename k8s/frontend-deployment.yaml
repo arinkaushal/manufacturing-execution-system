@@ -19,9 +19,9 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: mes-client:latest
+          image: arinkaushal/mes-client:v1
 
           ports:
             - containerPort: 80
 
-          imagePullPolicy: Never
+          imagePullPolicy: Always

@@ -19,7 +19,11 @@ spec:
     spec:
       containers:
         - name: backend
-          image: arinkaushal/mes-server:v2
+          image: arinkaushal/mes-server:v1
 
           ports:
             - containerPort: 5000
+
+          envFrom:
+            - secretRef:
+                name: backend-secret
