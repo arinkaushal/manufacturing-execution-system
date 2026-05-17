@@ -2,6 +2,8 @@ pipeline {
     agent any
 
     environment {
+        KUBECONFIG = "/var/jenkins_home/.kube/config"
+
         FRONTEND_IMAGE = "arinkaushal/mes-client:v1"
         BACKEND_IMAGE  = "arinkaushal/mes-server:v1"
     }
