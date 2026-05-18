@@ -33,3 +33,9 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+terraform/*
+
+!terraform/main.tf
+!terraform/output.tf
+!terraform/provider.tf
