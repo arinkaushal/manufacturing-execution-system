@@ -1,4 +1,4 @@
-const API = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : '');
+const API = import.meta.env.VITE_API_URL || '';
 import axios from "axios";
 const request = async (url, method = "GET", body) => {
   const res = await fetch(API + url, {
