@@ -1,5 +1,5 @@
 
-const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '' : 'http://backend-service:5000');
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 async function request(path, method = 'POST', body = null) {
   const res = await fetch(API_BASE + path, {

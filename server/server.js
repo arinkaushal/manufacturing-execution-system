@@ -25,6 +25,18 @@ const MONGO = process.env.MONGO_URI;
 client.collectDefaultMetrics();
 
 // metrics endpoint
+//make a health endpoint to check the database 
+app.get('/health', async (req, res) => {
+  try {
+    await connectDB(MONGO);
+    //fetch a simple query to check if the database is responsive
+    const db = client.db();
+    await db.collection('users').findOne({});
+    res.status(200).send('Server and database are running');
+  } catch (error) {
+    res.status(500).send('Error occurred while checking health');
+  }
+});
 app.get('/metrics', async (req, res) => {
   try {
     res.set('Content-Type', client.register.contentType);
@@ -69,6 +81,7 @@ const sessionMiddleware = session({
 
 app.use(sessionMiddleware);
 
+
 app.use('/api/auth', authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/users", userRoutes);
@@ -77,6 +90,7 @@ const PORT = process.env.PORT || 5000;
 const server = http.createServer(app);
 
 initSocket(server, sessionMiddleware);
+
 
 server.listen(PORT, () => {
   console.log(`Server + Socket.IO running on port ${PORT}`);
